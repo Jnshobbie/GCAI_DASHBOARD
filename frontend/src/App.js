@@ -125,7 +125,7 @@ function App() {
     setAnalysisError(null);
     setAnalysisLoading(true);
     try {
-      const res = await axios.get(`/api/analysis/${item.id}`);
+      const res = await axios.get(`/api/analysis/${item.id}`)
       setAnalysis(res.data);
       setAnalysisError(null);
     } catch (e) {
@@ -241,3 +241,4 @@ function App() {
 }
 
 export default App;
+
