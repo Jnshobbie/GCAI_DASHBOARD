@@ -477,18 +477,25 @@ def api_analysis(news_id):
         'regions': regions,
         'political_capital_lost_pct': political_loss_pct
     }), 
-from flask import send_from_directory
+from flask import Flask, send_from_directory
 import os
 
-# Serve React frontend
+app = Flask(
+    __name__,
+    static_folder="../frontend/build/static",   # points to the actual static files
+    template_folder="../frontend/build"        # points to index.html
+)
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    if path != "" and os.path.exists("build/" + path):
-        return send_from_directory('build', path)
+    # Serve static files if they exist
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    # Otherwise serve React's index.html
     else:
-        return send_from_directory('build', 'index.html')
-    
+        return send_from_directory(app.template_folder, "index.html")
+
 
 # ------------------ MAIN ------------------
 if __name__ == "__main__":
