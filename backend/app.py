@@ -6,7 +6,7 @@ import time
 import schedule
 import feedparser
 from datetime import datetime
-from models import init_db, DB_FILE
+from .models import init_db, DB_FILE 
 
 DB = DB_FILE
 app = Flask(__name__)
