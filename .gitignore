@@ -9,17 +9,3 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Database files
-*.db
-
-# Build/output folders
-build/
-dist/
-*.egg-info/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
