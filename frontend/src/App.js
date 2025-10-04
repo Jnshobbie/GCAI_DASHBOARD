@@ -7,7 +7,7 @@ import MiniMap from "./components/MiniMap";
 import OsintCards from "./components/OsintCards";
 import BottomSection from "./components/BottomSection";
 import AnalysisPanel from "./components/AnalysisPanel";
-import LoginPage from "./LoginPage";
+import LoginPage from "./LoginPage"; 
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -53,79 +53,79 @@ function App() {
 
   async function fetchDates() {
     try {
-     const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/dates`);
-setAvailableDates(res.data || []);
-} catch (e) {
-  console.error("Failed to fetch dates", e);
-}
-
-async function fetchAll(overrides = {}) {
-  try {
-    const params = new URLSearchParams();
-    const merged = { ...filters, ...overrides };
-    Object.entries(merged).forEach(([k, v]) => {
-      if (v) params.append(k, v);
-    });
-    if (dateFilter) params.append("date", dateFilter);
-    params.append("limit", pageSize);
-    params.append("offset", page * pageSize);
-
-    const [threatsRes, statsRes, insightsRes] = await Promise.all([
-      axios.get(`${process.env.REACT_APP_API_URL}/api/threats?${params.toString()}`),
-      axios.get(`${process.env.REACT_APP_API_URL}/api/stats`),
-      axios.get(`${process.env.REACT_APP_API_URL}/api/insights`),
-    ]);
-
-    const items = (threatsRes.data && threatsRes.data.items) || [];
-    setNewsRows(items);
-    setStats(statsRes.data || {});
-    setInsights((insightsRes.data && insightsRes.data.insights) || "");
-
-    // 🔑 Build filter options dynamically from live data
-    const types = [...new Set(items.map((i) => i.threatType).filter(Boolean))];
-    setThreatTypes(types);
-
-    const locs = items
-      .filter((i) => i.locationScope && i.locationName)
-      .map((i) => ({ scope: i.locationScope, name: i.locationName }));
-    setLocations(locs);
-
-    const ems = [...new Set(items.map((i) => i.emergency).filter(Boolean))];
-    setEmergencyLevels(ems);
-
-    const mats = [...new Set(items.map((i) => i.maturity).filter(Boolean))];
-    setMaturityLevels(mats);
-
-    // OSINT cards
-    const osint = items.slice(0, 9).map((i) => ({
-      id: i.id,
-      time: i.time,
-      source: (i.sources && i.sources[0])
-        ? new URL(i.sources[0]).hostname.replace("www.", "")
-        : "",
-      title: i.title,
-    }));
-    setOsintItems(osint);
-  } catch (e) {
-    console.error("Live fetch error", e);
+      const res = await axios.get("/api/dates");
+      setAvailableDates(res.data || []);
+    } catch (e) {
+      console.error("Failed to fetch dates", e);
+    }
   }
-}
 
-useEffect(() => {
-  if (loggedIn) {
-    const t = setTimeout(() => fetchAll(), 250);
-    return () => clearTimeout(t);
+  async function fetchAll(overrides = {}) {
+    try {
+      const params = new URLSearchParams();
+      const merged = { ...filters, ...overrides };
+      Object.entries(merged).forEach(([k, v]) => {
+        if (v) params.append(k, v);
+      });
+      if (dateFilter) params.append("date", dateFilter);
+      params.append("limit", pageSize);
+      params.append("offset", page * pageSize);
+
+      const [threatsRes, statsRes, insightsRes] = await Promise.all([
+        axios.get(`/api/threats?${params.toString()}`),
+        axios.get("/api/stats"),
+        axios.get("/api/insights"),
+      ]);
+
+      const items = (threatsRes.data && threatsRes.data.items) || [];
+      setNewsRows(items);
+      setStats(statsRes.data || {});
+      setInsights((insightsRes.data && insightsRes.data.insights) || "");
+
+      // 🔑 Build filter options dynamically from live data
+      const types = [...new Set(items.map((i) => i.threatType).filter(Boolean))];
+      setThreatTypes(types);
+
+      const locs = items
+        .filter((i) => i.locationScope && i.locationName)
+        .map((i) => ({ scope: i.locationScope, name: i.locationName }));
+      setLocations(locs);
+
+      const ems = [...new Set(items.map((i) => i.emergency).filter(Boolean))];
+      setEmergencyLevels(ems);
+
+      const mats = [...new Set(items.map((i) => i.maturity).filter(Boolean))];
+      setMaturityLevels(mats);
+
+      // OSINT cards
+      const osint = items.slice(0, 9).map((i) => ({
+        id: i.id,
+        time: i.time,
+        source: (i.sources && i.sources[0])
+          ? new URL(i.sources[0]).hostname.replace("www.", "")
+          : "",
+        title: i.title,
+      }));
+      setOsintItems(osint);
+    } catch (e) {
+      console.error("Live fetch error", e);
+    }
   }
-}, [filters, dateFilter, page, loggedIn]);
 
-async function onItemClick(item) {
-  setSelectedItem(item);
-  setAnalysis(null);
-  setAnalysisError(null);
-  setAnalysisLoading(true);
-  try {
-    const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/analysis/${item.id}`);
+  useEffect(() => {
+    if (loggedIn) {
+      const t = setTimeout(() => fetchAll(), 250);
+      return () => clearTimeout(t);
+    }
+  }, [filters, dateFilter, page, loggedIn]);
 
+  async function onItemClick(item) {
+    setSelectedItem(item);
+    setAnalysis(null);
+    setAnalysisError(null);
+    setAnalysisLoading(true);
+    try {
+      const res = await axios.get(`/api/analysis/${item.id}`);
       setAnalysis(res.data);
       setAnalysisError(null);
     } catch (e) {
@@ -240,5 +240,4 @@ async function onItemClick(item) {
   );
 }
 
-export default App;
-
+export default App; 

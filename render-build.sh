@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
-# Install frontend dependencies and build
+set -e
+
+# 1 Build React frontend
 cd frontend
 npm install
 npm run build
 cd ..
 
-# Move build folder into backend
+# 2 Copy frontend build to backend (so Flask can serve it)
 rm -rf backend/build
-cp -r frontend/build backend/
+cp -r frontend/build backend/build
 
-# Install backend dependencies
+# 3 Install backend dependencies
 cd backend
 pip install -r requirements.txt
+cd ..
