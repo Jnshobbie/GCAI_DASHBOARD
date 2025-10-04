@@ -23,12 +23,10 @@ export default function FiltersSidebar({
     : [];
 
   return (
-    <aside className="w-72 shrink-0 bg-gray-800 rounded-lg p-4 space-y-4">
+    <aside className="flex flex-col bg-gray-800 rounded-lg p-4 space-y-4 w-full md:w-64 lg:w-72">
       {/* Threat Type */}
       <div>
-        <h3 className="text-sm uppercase tracking-wider text-gray-400 mb-2">
-          Threat Type
-        </h3>
+        <h3 className="text-sm uppercase tracking-wider text-gray-400 mb-2">Threat Type</h3>
         <select
           className="w-full bg-gray-700 p-2 rounded"
           value={value.threatType}
@@ -44,11 +42,9 @@ export default function FiltersSidebar({
         </select>
       </div>
 
-      {/* Date Filter */}
+      {/* Date */}
       <div>
-        <h3 className="text-sm uppercase tracking-wider text-gray-400 mb-2">
-          Date
-        </h3>
+        <h3 className="text-sm uppercase tracking-wider text-gray-400 mb-2">Date</h3>
         <select
           className="w-full bg-gray-700 p-2 rounded"
           value={dateFilter}
@@ -66,9 +62,7 @@ export default function FiltersSidebar({
 
       {/* Location */}
       <div>
-        <h3 className="text-sm uppercase tracking-wider text-gray-400 mb-2">
-          Location Scope
-        </h3>
+        <h3 className="text-sm uppercase tracking-wider text-gray-400 mb-2">Location Scope</h3>
         <select
           className="w-full bg-gray-700 p-2 rounded mb-2"
           value={value.locationScope}
@@ -87,12 +81,11 @@ export default function FiltersSidebar({
             onChange={(e) => handle("locationName", e.target.value)}
           >
             <option value="">Any Region</option>
-            {Array.isArray(regionOptions) &&
-              regionOptions.map((r) => (
-                <option key={r.name} value={r.name}>
-                  {r.name}
-                </option>
-              ))}
+            {regionOptions.map((r) => (
+              <option key={r.name} value={r.name}>
+                {r.name}
+              </option>
+            ))}
           </select>
         )}
 
@@ -103,21 +96,18 @@ export default function FiltersSidebar({
             onChange={(e) => handle("locationName", e.target.value)}
           >
             <option value="">Any Country</option>
-            {Array.isArray(countryOptions) &&
-              countryOptions.map((c) => (
-                <option key={c.name} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
+            {countryOptions.map((c) => (
+              <option key={c.name} value={c.name}>
+                {c.name}
+              </option>
+            ))}
           </select>
         )}
       </div>
 
       {/* Emergency */}
       <div>
-        <h3 className="text-sm uppercase tracking-wider text-gray-400 mb-2">
-          Emergency
-        </h3>
+        <h3 className="text-sm uppercase tracking-wider text-gray-400 mb-2">Emergency</h3>
         <select
           className="w-full bg-gray-700 p-2 rounded"
           value={value.emergency}
@@ -135,9 +125,7 @@ export default function FiltersSidebar({
 
       {/* Maturity */}
       <div>
-        <h3 className="text-sm uppercase tracking-wider text-gray-400 mb-2">
-          Maturity
-        </h3>
+        <h3 className="text-sm uppercase tracking-wider text-gray-400 mb-2">Maturity</h3>
         <select
           className="w-full bg-gray-700 p-2 rounded"
           value={value.maturity}

@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-// This component attempts to load react-leaflet dynamically at runtime.
-// If react-leaflet/leaflet are not installed, it falls back to the SVG map.
 export default function MiniMap({ items }) {
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [LeafletComponents, setLeafletComponents] = useState(null);
@@ -9,15 +7,14 @@ export default function MiniMap({ items }) {
 
   useEffect(() => {
     mountedRef.current = true;
-    // inject leaflet css from CDN to ensure styles if the library is installed
+
+    // inject leaflet css from CDN (remove integrity to avoid blocking)
     const linkId = 'leaflet-css-cdn';
     if (!document.getElementById(linkId)) {
       const link = document.createElement('link');
       link.id = linkId;
       link.rel = 'stylesheet';
       link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      link.integrity = 'sha256-sA+e2b1j3bMpLz0iM9g6ZQqz8QnQVX1fKec/0iJTQzM=';
-      link.crossOrigin = '';
       document.head.appendChild(link);
     }
 
@@ -27,11 +24,9 @@ export default function MiniMap({ items }) {
         const rl = await import('react-leaflet');
         const L = await import('leaflet');
         if (!mountedRef.current) return;
-        // silence default icon issues by using CircleMarker (no icon needed)
         setLeafletComponents({ rl, L });
         setLeafletLoaded(true);
       } catch (err) {
-        // not installed or failed; we'll fallback to SVG
         setLeafletLoaded(false);
         setLeafletComponents(null);
       }
@@ -50,13 +45,12 @@ export default function MiniMap({ items }) {
 
   const hotspots = Object.entries(regionCounts).map(([name, count]) => ({ name, count }));
 
-  // fallback SVG map (kept simple)
+  // fallback SVG map
   function SVGFallback() {
     const gazetteer = {
       US: [38.0, -97.0],
       'United States': [38.0, -97.0],
       UK: [55.3781, -3.4360],
-      Britain: [55.3781, -3.4360],
       China: [35.8617, 104.1954],
       India: [20.5937, 78.9629],
       'Middle East': [29.0, 45.0],
@@ -66,6 +60,7 @@ export default function MiniMap({ items }) {
       Pakistan: [30.3753, 69.3451],
       Russia: [61.5240, 105.3188],
     };
+
     function lookupCoord(name) {
       if (!name) return null;
       if (gazetteer[name]) return gazetteer[name];
@@ -75,11 +70,13 @@ export default function MiniMap({ items }) {
       }
       return null;
     }
+
     function project(lat, lon, width, height) {
       const x = ((lon + 180) / 360) * width;
       const y = ((90 - lat) / 180) * height;
       return [x, y];
     }
+
     function colorFor(count) {
       if (count >= 5) return '#ef4444';
       if (count >= 3) return '#f97316';
@@ -90,87 +87,99 @@ export default function MiniMap({ items }) {
 
     const width = 520;
     const height = 240;
+
     return (
-      <div className="w-full h-56">
-        <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%" className="rounded">
-          <rect x="0" y="0" width={width} height={height} fill="#0f172a" />
-          {[-120, -60, 0, 60, 120].map((lon, i) => (
-            <line key={`g-${i}`} x1={project(90, lon, width, height)[0]} y1={0} x2={project(-90, lon, width, height)[0]} y2={height} stroke="#1f2937" strokeWidth={0.5} />
-          ))}
-          {hotspots.map((h) => {
-            const coord = lookupCoord(h.name);
-            if (!coord) return null;
-            const [lat, lon] = coord;
-            const [x, y] = project(lat, lon, width, height);
-            const r = Math.min(24, 4 + h.count * 4);
-            return (
-              <g key={h.name} transform={`translate(${x},${y})`}>
-                <circle r={r} fill={colorFor(h.count)} opacity={0.9} stroke="#000" strokeWidth={0.5} />
-                <text x={r + 6} y={4} fill="#e6eef8" fontSize={11}>{h.name} ({h.count})</text>
-              </g>
-            );
-          })}
-        </svg>
-      </div>
+      <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%" className="rounded">
+        <rect x="0" y="0" width={width} height={height} fill="#0f172a" />
+        {[-120, -60, 0, 60, 120].map((lon, i) => (
+          <line
+            key={`g-${i}`}
+            x1={project(90, lon, width, height)[0]}
+            y1={0}
+            x2={project(-90, lon, width, height)[0]}
+            y2={height}
+            stroke="#1f2937"
+            strokeWidth={0.5}
+          />
+        ))}
+        {hotspots.map((h) => {
+          const coord = lookupCoord(h.name);
+          if (!coord) return null;
+          const [lat, lon] = coord;
+          const [x, y] = project(lat, lon, width, height);
+          const r = Math.min(24, 4 + h.count * 4);
+          return (
+            <g key={h.name} transform={`translate(${x},${y})`}>
+              <circle r={r} fill={colorFor(h.count)} opacity={0.9} stroke="#000" strokeWidth={0.5} />
+              <text x={r + 6} y={4} fill="#e6eef8" fontSize={11}>
+                {h.name} ({h.count})
+              </text>
+            </g>
+          );
+        })}
+      </svg>
     );
   }
 
-  // If dynamic load succeeded, render Leaflet map
+  // Leaflet map render
   if (leafletLoaded && LeafletComponents) {
     try {
       const { MapContainer, TileLayer, CircleMarker, Popup } = LeafletComponents.rl;
       const L = LeafletComponents.L;
 
-      // build markers from hotspots using small gazetteer
-      const markers = hotspots.map((h) => {
-        // try to parse lat/lon from item if provided
-        const latlon = (function() {
-          // find an item matching this hotspot name that has coords
-          const it = items.find((it) => (it.locationName || it.region || it.location || '').toString() === h.name);
-          if (it) {
-            if (it.lat && it.lon) return [it.lat, it.lon];
-            if (it.latitude && it.longitude) return [it.latitude, it.longitude];
-          }
-          const g = {
-            US: [38.0, -97.0], 'United States': [38.0, -97.0], UK: [55.3781, -3.4360], China: [35.8617, 104.1954], India: [20.5937, 78.9629], 'Middle East': [29.0, 45.0], Ukraine: [48.3794, 31.1656], Gaza: [31.5, 34.47], Israel: [31.5, 34.75], Russia: [61.5240, 105.3188]
+      const markers = hotspots
+        .map((h) => {
+          const it = items.find((i) => (i.locationName || i.region || i.location || '').toString() === h.name);
+          const latlon = it?.lat && it?.lon ? [it.lat, it.lon] : it?.latitude && it?.longitude ? [it.latitude, it.longitude] : null;
+
+          const fallbackGazetteer = {
+            US: [38.0, -97.0],
+            'United States': [38.0, -97.0],
+            UK: [55.3781, -3.4360],
+            China: [35.8617, 104.1954],
+            India: [20.5937, 78.9629],
+            'Middle East': [29.0, 45.0],
+            Ukraine: [48.3794, 31.1656],
+            Gaza: [31.5, 34.47],
+            Israel: [31.5, 34.75],
+            Russia: [61.5240, 105.3188],
           };
-          if (g[h.name]) return g[h.name];
-          return null;
-        })();
-        return { ...h, coords: latlon };
-      }).filter(m => m.coords);
+          return { ...h, coords: latlon || fallbackGazetteer[h.name] };
+        })
+        .filter((m) => m.coords);
 
       const center = markers.length ? markers[0].coords : [20, 0];
 
       return (
-        <div className="bg-gray-800 rounded-lg p-4">
+        <div className="bg-gray-800 rounded-lg p-4 w-full" style={{ height: 240 }}>
           <h3 className="text-lg font-semibold mb-3">Hotspots Map</h3>
-          <div className="h-56">
-            <MapContainer center={center} zoom={2} style={{ height: '100%', width: '100%' }}>
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {markers.map((m, idx) => (
-                <CircleMarker
-                  key={m.name + idx}
-                  center={m.coords}
-                  radius={6 + Math.min(20, m.count * 3)}
-                  pathOptions={{ color: '#000', fillColor: '#ef4444', fillOpacity: 0.8 }}
-                >
-                  <Popup>
-                    <div className="text-sm"><strong>{m.name}</strong><br/>Count: {m.count}</div>
-                  </Popup>
-                </CircleMarker>
-              ))}
-            </MapContainer>
-          </div>
+          <MapContainer center={center} zoom={2} style={{ height: '100%', width: '100%' }}>
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {markers.map((m, idx) => (
+              <CircleMarker
+                key={m.name + idx}
+                center={m.coords}
+                radius={6 + Math.min(20, m.count * 3)}
+                pathOptions={{ color: '#000', fillColor: '#ef4444', fillOpacity: 0.8 }}
+              >
+                <Popup>
+                  <div className="text-sm">
+                    <strong>{m.name}</strong>
+                    <br />
+                    Count: {m.count}
+                  </div>
+                </Popup>
+              </CircleMarker>
+            ))}
+          </MapContainer>
         </div>
       );
     } catch (err) {
-      // fall through to SVG fallback
       return (
-        <div className="bg-gray-800 rounded-lg p-4">
+        <div className="bg-gray-800 rounded-lg p-4 w-full" style={{ height: 240 }}>
           <h3 className="text-lg font-semibold mb-3">Hotspots Map</h3>
           {SVGFallback()}
         </div>
@@ -178,12 +187,13 @@ export default function MiniMap({ items }) {
     }
   }
 
-  // default fallback
   return (
-    <div className="bg-gray-800 rounded-lg p-4">
+    <div className="bg-gray-800 rounded-lg p-4 w-full" style={{ height: 240 }}>
       <h3 className="text-lg font-semibold mb-3">Hotspots Map</h3>
       {hotspots.length === 0 ? (
-        <div className="h-56 flex items-center justify-center text-gray-400">No hotspots for current filters</div>
+        <div className="h-full flex items-center justify-center text-gray-400">
+          No hotspots for current filters
+        </div>
       ) : (
         SVGFallback()
       )}
