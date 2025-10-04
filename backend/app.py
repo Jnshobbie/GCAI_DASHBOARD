@@ -7,7 +7,7 @@ import schedule
 import feedparser
 import os
 from datetime import datetime
-from models import init_db, DB_FILE
+from .models import init_db, DB_FILE
 
 DB = DB_FILE
 
