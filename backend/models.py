@@ -1,7 +1,9 @@
 # models.py
+import os
 import sqlite3
 
-DB_FILE = "gcaiphase1.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_FILE = os.path.join(BASE_DIR, "gcaiphase1.db")
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
