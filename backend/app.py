@@ -6,6 +6,7 @@ import time
 import schedule
 import feedparser
 import os
+import sys 
 from datetime import datetime
 from .models import init_db, DB_FILE
 
@@ -325,10 +326,17 @@ def serve(path):
     else:
         return send_from_directory(app.template_folder,"index.html")
 
-# ------------------ MAIN ------------------
+# app.py (final main block)
 if __name__ == "__main__":
     init_db()
-    fetch_and_store()
-    t=threading.Thread(target=run_scheduler, daemon=True)
+
+    # Run the fetch job if called by cron
+    if len(sys.argv) > 1 and sys.argv[1] == "fetch":
+        fetch_and_store()
+        print("✅ News data updated successfully by cron.")
+        exit(0)
+
+    # Otherwise, start the web app normally
+    t = threading.Thread(target=run_scheduler, daemon=True)
     t.start()
     app.run(host="0.0.0.0", port=5000, debug=False)
