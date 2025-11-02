@@ -25,5 +25,5 @@ jobs:
 
       - name: Run fetch script
         run: |
-          cd backend
-          python app.py fetch
+         python -m backend.app fetch
+
